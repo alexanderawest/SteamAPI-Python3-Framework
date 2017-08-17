@@ -6,7 +6,13 @@ class SteamUser:
 	
 	def __init__(self, id: int):
 		self.ID64 = id #int()
-		self.API_KEY = open('api_key.txt', 'r').readline().strip('\n') #str()
+		try:
+			self.API_KEY = open('api_key.txt', 'r').readline().strip('\n') #str()
+		except (FileNotFoundError):
+			print('A Steam API Key is missing!')
+			self.API_KEY = input('Please enter an API key: ')
+			if 'Y' == input('Would you like to save this key? [Y/N]: '):
+				open('api_key.txt', 'w').write('self.API_KEY')
 		self.FRIENDS = set()
 		self.GAMES = set()
 			
