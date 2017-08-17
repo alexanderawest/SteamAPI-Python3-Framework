@@ -66,7 +66,7 @@ class SteamGame:
 		try:
 			if self.massJSON['controller_support']: self.controller_support = True
 		except (KeyError):
-			pass
+			self.multiplayer = False
 		return self.controller_support
 	
 	def get_multiplayer(self):
@@ -77,7 +77,7 @@ class SteamGame:
 					self.multiplayer = True
 					return self.multiplayer
 		except (KeyError):
-			pass
+			self.multiplayer = False
 		return self.multiplayer
 	
 	def load_all_info(self):
