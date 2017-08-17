@@ -103,7 +103,7 @@ class SteamGame:
 	def __init__(self, id: int):
 		self.ID = id
 		self.load_all_info()
-		self.name = name
+		self.name = str()
 		self.multiplayer = None
 		self.controller_support = None
 		
