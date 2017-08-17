@@ -25,12 +25,14 @@ class SteamUser:
 	def num_friends(self) -> int:
 		return len(self.FRIENDS)
 	
-	def games(self) -> {int}:
+	def games(self, id_only = False) -> {'SteamGame'}:
 		if self.GAMES: return self.GAMES
 		base_url = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?'
 		query_parameters = [('key', self.API_KEY), ('include_appinfo', '1'), ('steamid', self.ID64)]
 		request_URL = base_url + urllib.parse.urlencode(query_parameters)
 		dic_json = _api_request(request_URL)
+		if id_only:
+			return set(game['appid'] for game in dic_json['response']['games'])
 		for game in dic_json['response']['games']:
 			self.GAMES.add(SteamGame(game['appid']))
 		return self.GAMES
@@ -110,7 +112,6 @@ class SteamGame:
 		self.get_name()
 		self.get_controller_support()
 		self.get_multiplayer()
-		self.delete_massJSON()
 	
 	def get_name(self) -> str:
 		if self.name: return self.name
@@ -127,7 +128,7 @@ class SteamGame:
 			self.multiplayer = False
 		return self.controller_support
 	
-	def get_multiplayer(self):
+	def get_multiplayer(self) -> bool:
 		if self.multiplayer != None: return self.multiplayer
 		try:
 			for category in self.massJSON['categories']:
@@ -155,11 +156,38 @@ def _api_request(link: str) -> dict():
 		dic_json = json.loads(json_txt)
 		return dic_json
 
-
+class SteamAnalytics:
+	def GameMatcher(self, all_users: {'SteamUser'}, multiplayer_only = True, id_only = False) -> {SteamGame}:
+		# id_only and multiplayer_only need to be implemented (even though this is a huge performace hit with huge information loss)
+		temp = all_users.pop().games(True)
+		for user in all_users:
+			if user.games(True):
+				temp.intersection_update(user.games(True))
+		if id_only and not multiplayer_only:
+			return temp
+		elif id_only and multiplayer_only:
+			for game in temp.copy():
+				if not SteamGame(game).get_multiplayer(): temp.pop(game)
+			return temp
+		else:
+			games = set()
+			for game in temp:
+				if multiplayer_only:
+					x = SteamGame(game)
+					if x.get_multiplayer():
+						games.add(x)
+				else:
+					games.add(SteamGame(game))
+			return games
+		
+	
 if __name__ == '__main__':
 	print('/!\ TESTING SteamUser Class /!\\')
-	FlyingSentry = SteamUser(76561198046935622) # PearBear ID
-	print(FlyingSentry.was_online_24())
+	#FlyingSentry = SteamUser(76561198046935622) # PearBear ID
+	#print(FlyingSentry.was_online_24())
+	gameList = SteamAnalytics().GameMatcher({SteamUser(76561198046935622), SteamUser(76561198067005036)})
+	for g in gameList:
+		print(g.get_name())
 	#for x in FlyingSentry.games():
 	#	print(x.get_name(), 'has multiplayer:', x.get_multiplayer())
 	#x = SteamGame(550)
