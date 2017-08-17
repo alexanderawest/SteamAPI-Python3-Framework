@@ -1,19 +1,15 @@
 import json
 import urllib.parse
 import urllib.request
+from time import time
 
 class SteamUser:
 	def __init__(self, id: int):
 		self.ID64 = id
-		try:
-			self.API_KEY = open('api_key.txt', 'r').readline().strip('\n')
-		except (FileNotFoundError):
-			print('A Steam API Key is missing!')
-			self.API_KEY = input('Please enter an API key: ')
-			if 'Y' == input('Would you like to save this key? [Y/N]: '):
-				open('api_key.txt', 'w').write(self.API_KEY)
+		self._load_API_key()
 		self.FRIENDS = set()
 		self.GAMES = set()
+		self.name = str()
 			
 	def friends(self) -> {int}:
 		if self.FRIENDS: return self.FRIENDS
@@ -41,18 +37,80 @@ class SteamUser:
 	
 	def num_games(self) -> int:
 		return len(self.GAMES)
+	
+	def get_display_name(self) -> str:
+		if self.name: return self.name
+		self.name = _get_player_summary('personaname')
+		return self.name
+	
+	def get_profile_url(self) -> str:
+		return self._get_player_summary('profileurl')
+	
+	def get_full_avatar(self) -> str:
+		return self._get_player_summary('avatarfull')
+	
+	def get_online_status(self) -> int:
+		return self._get_player_summary('personastate')
+	
+	def is_offline(self) -> bool:
+		return self.get_online_status() == 0
+	
+	def is_online(self) -> bool:
+		return self.get_online_status() == 1
+	
+	def is_busy(self) -> bool:
+		return self.get_online_status() == 2
+		
+	def is_away(self) -> bool:
+		return self.get_online_status() == 3
+	
+	def is_snooze(self) -> bool:
+		return self.get_online_status() == 4
+	
+	def is_looking_to_trade(self) -> bool:
+		return self.get_online_status() == 5
+	
+	def is_looking_to_play(self) -> bool:
+		return self.get_online_status() == 6
+		
+	def was_online_24(self) -> bool:
+		return self.was_online_unix(86400) #24 Hours
+	
+	def was_online_7(self) -> bool:
+		return self.was_online_unix(604800) #1 Week or 7 Days
+	
+	def was_online_unix(self, unix: int) -> bool:
+		last_online = self._get_player_summary('lastlogoff')
+		return(int(time()) - last_online) <= unix
+	
+	def _get_player_summary(self, field: str) -> dict:
+		base_url = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?'
+		query_parameters = [('key', self.API_KEY), ('steamids', str(self.ID64))]
+		request_URL = base_url + urllib.parse.urlencode(query_parameters)
+		return _api_request(request_URL)['response']['players'][0][field]
+		
+	def _load_API_key(self) -> None:
+		try:
+			self.API_KEY = open('api_key.txt', 'r').readline().strip('\n')
+		except (FileNotFoundError):
+			print('A Steam API Key is missing!')
+			self.API_KEY = input('Please enter an API key: ')
+			if 'Y' == input('Would you like to save this key? [Y/N]: '):
+				open('api_key.txt', 'w').write(self.API_KEY)
+		
 
 class SteamGame:
 	def __init__(self, id: int):
 		self.ID = id
 		self.load_all_info()
-		self.name = str()
+		self.name = name
 		self.multiplayer = None
 		self.controller_support = None
 		
 		self.get_name()
-		self.get_multiplayer()
 		self.get_controller_support()
+		self.get_multiplayer()
+		self.delete_massJSON()
 	
 	def get_name(self) -> str:
 		if self.name: return self.name
@@ -100,10 +158,10 @@ def _api_request(link: str) -> dict():
 
 if __name__ == '__main__':
 	print('/!\ TESTING SteamUser Class /!\\')
-	FlyingSentry = SteamUser(76561198041376516) # PearBear ID
-	#FlyingSentry.games()
-	for x in FlyingSentry.games():
-		print(x.get_name(), 'has multiplayer:', x.get_multiplayer())
+	FlyingSentry = SteamUser(76561198046935622) # PearBear ID
+	print(FlyingSentry.was_online_24())
+	#for x in FlyingSentry.games():
+	#	print(x.get_name(), 'has multiplayer:', x.get_multiplayer())
 	#x = SteamGame(550)
 	#print(FlyingSentry.ID64, "has", FlyingSentry.num_friends(), "friends and", FlyingSentry.num_games(), "games.")
 	
