@@ -1,3 +1,5 @@
+# VERSION 0.0.1
+
 import json
 import urllib.parse
 import urllib.request
