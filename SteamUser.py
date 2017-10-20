@@ -1,5 +1,3 @@
-# VERSION 0.0.1
-
 import json
 import urllib.parse
 import urllib.request
@@ -181,19 +179,3 @@ class SteamAnalytics:
 				else:
 					games.add(SteamGame(game))
 			return games
-		
-	
-if __name__ == '__main__':
-	print('/!\ TESTING SteamUser Class /!\\')
-	#FlyingSentry = SteamUser(76561198046935622) # PearBear ID
-	#print(FlyingSentry.was_online_24())
-	gameList = SteamAnalytics().GameMatcher({SteamUser(76561198046935622), SteamUser(76561198067005036)})
-	for g in gameList:
-		print(g.get_name())
-	#for x in FlyingSentry.games():
-	#	print(x.get_name(), 'has multiplayer:', x.get_multiplayer())
-	#x = SteamGame(550)
-	#print(FlyingSentry.ID64, "has", FlyingSentry.num_friends(), "friends and", FlyingSentry.num_games(), "games.")
-	
-		
-	
